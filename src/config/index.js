@@ -1,0 +1,82 @@
+'use strict';
+
+require('dotenv').config();
+
+const required = (key) => {
+  const val = process.env[key];
+  if (!val && process.env.NODE_ENV === 'production') {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return val;
+};
+
+const config = {
+  env: process.env.NODE_ENV || 'development',
+  port: parseInt(process.env.PORT, 10) || 3000,
+  appName: process.env.APP_NAME || 'sinhala-ocr-api',
+  isProd: process.env.NODE_ENV === 'production',
+  isTest: process.env.NODE_ENV === 'test',
+
+  jwt: {
+    secret: process.env.JWT_SECRET || 'dev-secret-change-in-prod',
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  },
+
+  db: {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    name: process.env.DB_NAME || 'sinhala_ocr',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: process.env.DB_SSL === 'true',
+    poolMin: parseInt(process.env.DB_POOL_MIN, 10) || 2,
+    poolMax: parseInt(process.env.DB_POOL_MAX, 10) || 10,
+  },
+
+  redis: {
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    password: process.env.REDIS_PASSWORD || undefined,
+    tls: process.env.REDIS_TLS === 'true',
+  },
+
+  gcp: {
+    projectId: process.env.GCP_PROJECT_ID || '',
+    keyFile: process.env.GCP_KEY_FILE || undefined,
+    storage: {
+      inputBucket: process.env.GCS_BUCKET_NAME || 'sinhala-ocr-uploads',
+      outputBucket: process.env.GCS_OUTPUT_BUCKET_NAME || 'sinhala-ocr-outputs',
+      signedUrlExpiry: parseInt(process.env.GCS_SIGNED_URL_EXPIRY, 10) || 259200, // 72hrs
+    },
+  },
+
+  upload: {
+    maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 20,
+    allowedMimeTypes: (process.env.ALLOWED_MIME_TYPES || 'image/jpeg,image/png,image/tiff,application/pdf').split(','),
+  },
+
+  jobs: {
+    ttlHours: parseInt(process.env.JOB_TTL_HOURS, 10) || 72,
+    queueConcurrency: parseInt(process.env.QUEUE_CONCURRENCY, 10) || 3,
+    maxRetries: parseInt(process.env.QUEUE_MAX_RETRIES, 10) || 2,
+  },
+
+  rateLimit: {
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 900000,
+    max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+    transcribeWindowMs: parseInt(process.env.TRANSCRIBE_RATE_LIMIT_WINDOW_MS, 10) || 3600000,
+    transcribeMax: parseInt(process.env.TRANSCRIBE_RATE_LIMIT_MAX, 10) || 20,
+  },
+
+  cors: {
+    origins: (process.env.CORS_ORIGINS || 'http://localhost:5173').split(','),
+  },
+
+  logging: {
+    level: process.env.LOG_LEVEL || 'info',
+    dir: process.env.LOG_DIR || './logs',
+  },
+};
+
+module.exports = config;

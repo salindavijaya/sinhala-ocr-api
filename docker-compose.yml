@@ -1,0 +1,113 @@
+version: '3.9'
+
+services:
+  # ─── API Server ────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      target: production
+    container_name: sinhala-ocr-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sinhala_ocr
+      DB_USER: postgres
+      DB_PASSWORD: devpassword
+      REDIS_URL: redis://redis:6379
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-your-project-id}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-sinhala-ocr-uploads}
+      GCS_OUTPUT_BUCKET_NAME: ${GCS_OUTPUT_BUCKET_NAME:-sinhala-ocr-outputs}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-at-least-64-chars-long-change-in-production!}
+      LOG_LEVEL: debug
+    volumes:
+      - ./src:/app/src          # hot reload in dev (with nodemon)
+      - ./gcp-service-account.json:/app/gcp-service-account.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ─── Transcription Worker ─────────────────────────────────────
+  worker:
+    build:
+      context: .
+      target: production
+    container_name: sinhala-ocr-worker
+    restart: unless-stopped
+    command: ["node", "src/workers/transcription.worker.js"]
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sinhala_ocr
+      DB_USER: postgres
+      DB_PASSWORD: devpassword
+      REDIS_URL: redis://redis:6379
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-your-project-id}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-sinhala-ocr-uploads}
+      GCS_OUTPUT_BUCKET_NAME: ${GCS_OUTPUT_BUCKET_NAME:-sinhala-ocr-outputs}
+      QUEUE_CONCURRENCY: 2
+    volumes:
+      - ./gcp-service-account.json:/app/gcp-service-account.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ─── PostgreSQL ────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: sinhala-ocr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sinhala_ocr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # ─── Redis ────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: sinhala-ocr-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge
