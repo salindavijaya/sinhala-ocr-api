@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # ─── Configuration ───────────────────────────────────────────
-GCP_PROJECT_ID="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID env var}"
+GCP_PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
 REGION="${REGION:-asia-south1}"
 SERVICE_NAME="${SERVICE_NAME:-sinhala-ocr-api}"
 WORKER_SERVICE="${WORKER_SERVICE:-sinhala-ocr-worker}"
