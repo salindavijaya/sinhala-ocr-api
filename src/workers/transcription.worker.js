@@ -131,28 +131,6 @@ const startWorker = () => {
     concurrency: config.jobs.queueConcurrency,
     maxRetries: config.jobs.maxRetries,
   });
-};
-
-
-// ... existing imports ...
- // <-- Add this native module
-
-// ... existing processJob code ...
-
-// ─── Worker startup ────────────────────────────────────────────────────────────
-const startWorker = () => {
-  const queue = getQueue();
-
-  queue.process(config.jobs.queueConcurrency, async (job) => {
-    // ... existing queue.process code ...
-  });
-
-  logger.info('Transcription worker started', {
-    concurrency: config.jobs.queueConcurrency,
-    maxRetries: config.jobs.maxRetries,
-  });
-
-  // 👇 ADD THIS: Dummy HTTP server to satisfy Cloud Run's port requirement 👇
   const port = process.env.PORT || 3000;
   const server = http.createServer((req, res) => {
     if (req.url === '/health' || req.url === '/') {
