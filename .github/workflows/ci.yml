@@ -9,6 +9,7 @@ on:
 env:
   NODE_VERSION: '20'
   NODE_ENV: test
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   test:
@@ -17,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -29,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Run linter
-        run: npm run lint || true   # non-blocking for MVP; tighten in Phase 2
+        run: npm run lint || true
 
       - name: Run unit tests with coverage
         run: npm run test:coverage
@@ -46,7 +47,7 @@ jobs:
           GCS_OUTPUT_BUCKET_NAME: test-outputs
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: coverage-report
@@ -58,7 +59,7 @@ jobs:
     needs: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Build Docker image
         run: docker build -t sinhala-ocr-api:ci .
@@ -70,7 +71,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
