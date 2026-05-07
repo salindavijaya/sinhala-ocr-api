@@ -17,6 +17,7 @@ const { downloadBuffer, uploadBuffer, buildOutputPath } = require('../services/s
 const Job = require('../models/Job');
 const config = require('../config');
 const logger = require('../utils/logger');
+const http = require('http');
 
 const processJob = async (bullJob) => {
   const {
@@ -132,7 +133,43 @@ const startWorker = () => {
   });
 };
 
-// Start worker if run directly (not imported as a module)
+
+// ... existing imports ...
+ // <-- Add this native module
+
+// ... existing processJob code ...
+
+// ─── Worker startup ────────────────────────────────────────────────────────────
+const startWorker = () => {
+  const queue = getQueue();
+
+  queue.process(config.jobs.queueConcurrency, async (job) => {
+    // ... existing queue.process code ...
+  });
+
+  logger.info('Transcription worker started', {
+    concurrency: config.jobs.queueConcurrency,
+    maxRetries: config.jobs.maxRetries,
+  });
+
+  // 👇 ADD THIS: Dummy HTTP server to satisfy Cloud Run's port requirement 👇
+  const port = process.env.PORT || 3000;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/') {
+      res.writeHead(200);
+      res.end('Worker is healthy and processing jobs');
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+
+  server.listen(port, '0.0.0.0', () => {
+    logger.info(`Cloud Run health check server listening on port ${port}`);
+  });
+};
+
+// Start worker if run directly
 if (require.main === module) {
   startWorker();
 }
