@@ -1,4 +1,4 @@
-name: CI — Test & Lint
+name: CI — Test, Build & Deploy
 
 on:
   push:
@@ -6,55 +6,55 @@ on:
   pull_request:
     branches: [main]
 
+# Use Node 24 runtime for all actions (removes deprecation warnings)
 env:
-  NODE_VERSION: '20'
-  NODE_ENV: test
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # ── Job 1: Tests ────────────────────────────────────────────
   test:
-    name: Unit & Integration Tests
+    name: Test & Coverage
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4.2.2
 
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4.4.0
+      - uses: actions/setup-node@v4.4.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linter
+      - name: Lint
         run: npm run lint || true
 
-      - name: Run unit tests with coverage
+      - name: Run tests with coverage
         run: npm run test:coverage
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_NAME: sinhala_ocr_test
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-at-least-64-chars-long-padded-here-for-ci-use-only
           GCP_PROJECT_ID: test-project
           GCS_BUCKET_NAME: test-uploads
           GCS_OUTPUT_BUCKET_NAME: test-outputs
+          REDIS_URL: redis://localhost:6379
+          DB_HOST: localhost
+          DB_NAME: sinhala_ocr_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
 
-      - name: Upload coverage report
+      - name: Upload coverage
         uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: coverage-report
           path: coverage/
+          retention-days: 7
 
+  # ── Job 2: Docker build check ────────────────────────────────
   build:
-    name: Docker Build Check
+    name: Docker Build
     runs-on: ubuntu-latest
     needs: test
 
@@ -64,6 +64,7 @@ jobs:
       - name: Build Docker image
         run: docker build -t sinhala-ocr-api:ci .
 
+  # ── Job 3: Deploy to Cloud Run (main branch only) ────────────
   deploy:
     name: Deploy to Cloud Run
     runs-on: ubuntu-latest
@@ -80,11 +81,13 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+        run: gcloud auth configure-docker gcr.io --quiet
 
-      - name: Deploy to Cloud Run
+      - name: Deploy
         run: bash scripts/deploy-cloud-run.sh
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
