@@ -75,7 +75,7 @@ gcloud run deploy "${WORKER_SERVICE}" \
   --platform=managed \
   --no-allow-unauthenticated \
   --command="node,src/workers/transcription.worker.js" \
-  --port=3000 \
+  --port=3001 \
   --min-instances=1 \
   --max-instances=5 \
   --concurrency=1 \
