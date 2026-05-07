@@ -11,7 +11,7 @@ set -euo pipefail
 # ─── Configuration ───────────────────────────────────────────
 GCP_PROJECT_ID="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID env var}"
 REGION="${REGION:-asia-south1}"
-SERVICE_NAME="${SERVICE_NAME:sicript-service }"
+SERVICE_NAME="${SERVICE_NAME:-sicript-service}"
 WORKER_SERVICE="${WORKER_SERVICE:-sinhala-ocr-worker}"
 TAG="${TAG:-$(git rev-parse --short HEAD 2>/dev/null || echo latest)}"
 
