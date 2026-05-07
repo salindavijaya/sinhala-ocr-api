@@ -230,7 +230,7 @@ if gcloud run deploy "${WORKER_SERVICE}" \
   --memory=1Gi \
   --cpu=2 \
   --timeout=3600s \
-  --startup-cpu-boost \
+  --cpu-boost \
   --set-env-vars="NODE_ENV=production,GCP_PROJECT_ID=${GCP_PROJECT_ID},QUEUE_CONCURRENCY=3,LOG_LEVEL=info" \
   --set-secrets="JWT_SECRET=jwt-secret:latest,DB_PASSWORD=db-password:latest,REDIS_URL=redis-url:latest" \
   --service-account="${SERVICE_ACCOUNT}" \
