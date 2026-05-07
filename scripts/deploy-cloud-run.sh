@@ -200,7 +200,7 @@ if gcloud run deploy "${SERVICE_NAME}" \
   --memory=512Mi \
   --cpu=1 \
   --timeout=3600s \
-  --startup-cpu-boost \
+  --cpu-boost \
   --session-affinity \
   --set-env-vars="NODE_ENV=production,GCP_PROJECT_ID=${GCP_PROJECT_ID},GCS_BUCKET_NAME=${GCS_BUCKET_NAME},GCS_OUTPUT_BUCKET_NAME=${GCS_OUTPUT_BUCKET_NAME}" \
   --set-secrets="JWT_SECRET=jwt-secret:latest,DB_PASSWORD=db-password:latest,REDIS_URL=redis-url:latest" \
