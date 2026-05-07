@@ -146,22 +146,32 @@ Returns job status. When `status === "completed"`:
 
 ## Deployment (GCP Cloud Run)
 
+### Quick Deploy
+
 ```bash
 # Set required env vars
 export GCP_PROJECT_ID=your-project
 export GCS_BUCKET_NAME=sinhala-ocr-uploads
 export GCS_OUTPUT_BUCKET_NAME=sinhala-ocr-outputs
 
-# Store secrets in Secret Manager
-echo -n "your-jwt-secret" | gcloud secrets create jwt-secret --data-file=-
-echo -n "your-db-password" | gcloud secrets create db-password --data-file=-
-echo -n "redis://..." | gcloud secrets create redis-url --data-file=-
-
 # Deploy
 bash scripts/deploy-cloud-run.sh
 ```
 
-CI/CD via GitHub Actions automatically deploys on push to `main`.
+### Automated CI/CD
+
+GitHub Actions automatically builds, tests, and deploys on push to `main` with:
+- ✅ Pre-deployment validation (secrets, GCP resources)
+- ✅ Docker multi-platform build
+- ✅ Post-deployment health checks
+- ✅ Automatic rollback on failure
+
+### Documentation
+
+For complete deployment setup and operations, see:
+- **[DEPLOYMENT_SETUP.md](./DEPLOYMENT_SETUP.md)** — GCP infrastructure setup guide
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** — Operational procedures & troubleshooting
+- **[DEPLOYMENT_AUDIT.md](./DEPLOYMENT_AUDIT.md)** — Audit report & improvements made
 
 ---
 

@@ -9,9 +9,45 @@ on:
 # Use Node 24 runtime for all actions (removes deprecation warnings)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Cloud Run deployment settings
+  REGION: asia-south1
+  SERVICE_NAME: sicript-service
+  WORKER_SERVICE: sinhala-ocr-worker
 
 jobs:
-  # ── Job 1: Tests ────────────────────────────────────────────
+  # ── Job 1: Validate secrets and environment ──────────────────
+  validate-secrets:
+    name: Validate Secrets & Environment
+    runs-on: ubuntu-latest
+    outputs:
+      deploy-allowed: ${{ steps.check.outputs.deploy-allowed }}
+    
+    steps:
+      - name: Check required secrets exist
+        id: check
+        run: |
+          set +e  # Don't exit on error for validation
+          
+          declare -a REQUIRED_SECRETS=("GCP_SA_KEY" "GCP_PROJECT_ID" "GCS_BUCKET_NAME" "GCS_OUTPUT_BUCKET_NAME")
+          MISSING_SECRETS=()
+          
+          for SECRET in "${REQUIRED_SECRETS[@]}"; do
+            if [[ -z "${{ secrets[SECRET] }}" ]]; then
+              MISSING_SECRETS+=("$SECRET")
+            fi
+          done
+          
+          if [[ ${#MISSING_SECRETS[@]} -gt 0 ]]; then
+            echo "❌ ERROR: Missing required secrets:"
+            printf '%s\n' "${MISSING_SECRETS[@]}"
+            echo "deploy-allowed=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          
+          echo "✓ All required secrets are configured"
+          echo "deploy-allowed=true" >> "$GITHUB_OUTPUT"
+
+  # ── Job 2: Tests ────────────────────────────────────────────
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
@@ -27,7 +63,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
+      - name: Lint code
         run: npm run lint || true
 
       - name: Run tests with coverage
@@ -44,15 +80,15 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
 
-      - name: Upload coverage
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: coverage-report
           path: coverage/
-          retention-days: 7
+          retention-days: 30
 
-  # ── Job 2: Docker build check ────────────────────────────────
+  # ── Job 3: Docker build (multi-platform) ────────────────────
   build:
     name: Docker Build
     runs-on: ubuntu-latest
@@ -61,15 +97,125 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Build Docker image
-        run: docker build -t sinhala-ocr-api:ci .
+      - name: Set up QEMU for multi-platform builds
+        uses: docker/setup-qemu-action@v3
 
-  # ── Job 3: Deploy to Cloud Run (main branch only) ────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (linux/amd64)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: sinhala-ocr-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Job 4: Pre-deployment validation ─────────────────────────
+  pre-deploy-validation:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    needs: [test, build, validate-secrets]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Validate GCP resources
+        run: |
+          set -e
+          
+          echo "🔍 Validating GCP resources..."
+          
+          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
+          REGION="${{ env.REGION }}"
+          
+          # Check project exists and is accessible
+          echo "  • Checking GCP project access..."
+          gcloud projects describe "$PROJECT_ID" --quiet
+          
+          # Check storage buckets exist
+          echo "  • Checking GCS buckets..."
+          gsutil ls "gs://${{ secrets.GCS_BUCKET_NAME }}" > /dev/null 2>&1 || {
+            echo "    ❌ ERROR: Bucket ${{ secrets.GCS_BUCKET_NAME }} not found"
+            exit 1
+          }
+          gsutil ls "gs://${{ secrets.GCS_OUTPUT_BUCKET_NAME }}" > /dev/null 2>&1 || {
+            echo "    ❌ ERROR: Bucket ${{ secrets.GCS_OUTPUT_BUCKET_NAME }} not found"
+            exit 1
+          }
+          
+          # Check Cloud Run API is enabled
+          echo "  • Checking Cloud Run API..."
+          gcloud services list --enabled --filter="name:run.googleapis.com" --quiet | grep -q run.googleapis.com || {
+            echo "    ⚠️  Enabling Cloud Run API..."
+            gcloud services enable run.googleapis.com --quiet
+          }
+          
+          # Check if Secret Manager secrets exist
+          echo "  • Checking Secret Manager..."
+          for SECRET in jwt-secret db-password redis-url; do
+            gcloud secrets describe "$SECRET" --project="$PROJECT_ID" > /dev/null 2>&1 || {
+              echo "    ⚠️  Secret '$SECRET' not found. It should be created in Secret Manager."
+            }
+          done
+          
+          echo "✓ Pre-deployment validation passed"
+
+  # ── Job 5: Deploy to Cloud Run (main branch only) ────────────
   deploy:
     name: Deploy to Cloud Run
     runs-on: ubuntu-latest
-    needs: [test, build]
+    needs: [test, build, pre-deploy-validation]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin,kubectl'
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Deploy to Cloud Run
+        run: bash scripts/deploy-cloud-run.sh
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+          GCS_OUTPUT_BUCKET_NAME: ${{ secrets.GCS_OUTPUT_BUCKET_NAME }}
+          TAG: ${{ github.sha }}
+          REGION: ${{ env.REGION }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          WORKER_SERVICE: ${{ env.WORKER_SERVICE }}
+
+  # ── Job 6: Post-deployment verification ───────────────────────
+  verify-deployment:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
 
     steps:
       - uses: actions/checkout@v4.2.2
@@ -84,13 +230,89 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io --quiet
+      - name: Verify services are running
+        run: |
+          set -e
+          
+          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
+          REGION="${{ env.REGION }}"
+          SERVICE_NAME="${{ env.SERVICE_NAME }}"
+          WORKER_SERVICE="${{ env.WORKER_SERVICE }}"
+          
+          echo "🔍 Verifying deployment..."
+          
+          # Verify API service
+          echo "  • Checking API service status..."
+          API_URL=$(gcloud run services describe "$SERVICE_NAME" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --format="value(status.url)" 2>/dev/null)
+          
+          if [[ -z "$API_URL" ]]; then
+            echo "    ❌ ERROR: API service '$SERVICE_NAME' not found"
+            exit 1
+          fi
+          
+          echo "    Service URL: $API_URL"
+          
+          # Check API health
+          echo "  • Checking API health..."
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+          
+          while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/api/v1/health/live" || echo "000")
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              echo "    ✓ API is healthy ($HTTP_CODE)"
+              break
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
+              echo "    Retry $RETRY_COUNT/$MAX_RETRIES (HTTP $HTTP_CODE)..."
+              sleep 5
+            fi
+          done
+          
+          if [[ $RETRY_COUNT -eq $MAX_RETRIES ]]; then
+            echo "    ❌ ERROR: API failed health check after $MAX_RETRIES attempts"
+            exit 1
+          fi
+          
+          # Verify worker service exists
+          echo "  • Checking Worker service status..."
+          WORKER_STATUS=$(gcloud run services describe "$WORKER_SERVICE" \
+            --project="$PROJECT_ID" \
+            --region="$REGION" \
+            --format="value(status.conditions[0].status)" 2>/dev/null || echo "NOT_FOUND")
+          
+          if [[ "$WORKER_STATUS" == "True" ]]; then
+            echo "    ✓ Worker service is running"
+          else
+            echo "    ⚠️  Worker service status: $WORKER_STATUS"
+          fi
+          
+          echo ""
+          echo "✓ Deployment verification passed!"
+          echo ""
+          echo "📋 Deployment Summary:"
+          echo "  Service: $SERVICE_NAME"
+          echo "  Worker:  $WORKER_SERVICE"
+          echo "  Region:  $REGION"
+          echo "  Commit:  ${{ github.sha }}"
+          echo "  URL:     $API_URL"
 
-      - name: Deploy
-        run: bash scripts/deploy-cloud-run.sh
-        env:
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
-          GCS_OUTPUT_BUCKET_NAME: ${{ secrets.GCS_OUTPUT_BUCKET_NAME }}
-          TAG: ${{ github.sha }}
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Production deployment completed successfully"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Author: ${{ github.actor }}"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Post-deployment verification failed"
+          echo "Please check the logs above and potentially rollback the deployment"
+          exit 1
