@@ -193,7 +193,7 @@ if gcloud run deploy "${SERVICE_NAME}" \
   --region="${REGION}" \
   --platform=managed \
   --allow-unauthenticated \
-  --port="${PORT}" \
+  --port=3000 \
   --min-instances=0 \
   --max-instances=10 \
   --concurrency=80 \
@@ -223,7 +223,7 @@ if gcloud run deploy "${WORKER_SERVICE}" \
   --platform=managed \
   --no-allow-unauthenticated \
   --args="src/workers/transcription.worker.js" \
-  --port="${PORT}" \
+  --port=3000 \
   --min-instances=1 \
   --max-instances=5 \
   --concurrency=1 \
