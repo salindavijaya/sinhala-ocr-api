@@ -78,6 +78,13 @@ const config = {
     level: 'debug',
     dir: process.env.LOG_DIR || './logs',
   },
+
+  sentry: {
+    dsn: process.env.SENTRY_DSN || '',
+    release: process.env.SENTRY_RELEASE || `${process.env.APP_NAME || 'sinhala-ocr-api'}@${require('../../package.json').version}`,
+    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.0,
+    debug: process.env.SENTRY_DEBUG === 'true',
+  },
 };
 
 module.exports = config;

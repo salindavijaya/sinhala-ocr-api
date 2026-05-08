@@ -272,6 +272,10 @@ gcloud run revisions list --service=sicript-service --region=asia-south1
 | `GCS_BUCKET_NAME` | GitHub secret | Input documents bucket |
 | `GCS_OUTPUT_BUCKET_NAME` | GitHub secret | Output documents bucket |
 | `QUEUE_CONCURRENCY` | Environment var | Queue processing parallelism |
+| `SENTRY_DSN` | Secret / env var | Sentry DSN for error monitoring |
+| `SENTRY_RELEASE` | Environment var | Optional release identifier for Sentry |
+| `SENTRY_TRACES_SAMPLE_RATE` | Environment var | Sample rate for Sentry performance traces |
+| `SENTRY_DEBUG` | Environment var | Enable Sentry debug logging when `true` |
 
 **Secrets (from Secret Manager):**
 - `JWT_SECRET` - Authentication token secret

@@ -17,6 +17,9 @@ const { downloadBuffer, uploadBuffer, buildOutputPath } = require('../services/s
 const Job = require('../models/Job');
 const config = require('../config');
 const logger = require('../utils/logger');
+const { initSentry, Sentry } = require('../utils/sentry');
+
+initSentry();
 const http = require('http');
 
 const processJob = async (bullJob) => {
@@ -111,6 +114,7 @@ const startWorker = () => {
     try {
       return await processJob(job);
     } catch (err) {
+      Sentry.captureException(err);
       logger.error('Worker: job processing error', {
         dbJobId: job.data.jobId,
         bullJobId: job.id,
@@ -149,6 +153,17 @@ const startWorker = () => {
 
 // Start worker if run directly
 if (require.main === module) {
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Worker unhandled Promise rejection', { reason: String(reason) });
+    Sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)));
+  });
+
+  process.on('uncaughtException', (err) => {
+    logger.error('Worker uncaught exception', { error: err.message, stack: err.stack });
+    Sentry.captureException(err);
+    Sentry.flush(2000).then(() => process.exit(1));
+  });
+
   startWorker();
 }
 
