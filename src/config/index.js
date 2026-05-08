@@ -37,8 +37,8 @@ const config = {
 
   redis: {
     url: 'redis://10.228.118.12:6379',//  process.env.REDIS_URL || 'redis://localhost:6379',
-    password: process.env.REDIS_PASSWORD || undefined,
-    tls: process.env.REDIS_TLS === 'true',
+    password: '',//process.env.REDIS_PASSWORD || undefined,
+    tls: false // process.env.REDIS_TLS === 'true',
   },
 
   gcp: {
