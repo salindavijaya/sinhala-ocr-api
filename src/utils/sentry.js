@@ -18,6 +18,8 @@ const initSentry = () => {
   if (Sentry.getClient()) {
     return Sentry;
   }
+// Import with `import * as Sentry from "@sentry/node"` if you are using ESM
+const Sentry = require("@sentry/node");
 
   Sentry.init({
     dsn: config.sentry.dsn,
@@ -27,6 +29,7 @@ const initSentry = () => {
     tracesSampleRate: config.sentry.tracesSampleRate || 1.0,
     attachStacktrace: true,
     debug: config.sentry.debug,
+    sendDefaultPii: true,
     // v8 uses functional integrations instead of class constructors
     integrations: [
       Sentry.httpIntegration({ tracing: true }),
