@@ -2,6 +2,7 @@
 
 const logger = require('../utils/logger');
 const config = require('../config');
+const { Sentry } = require('../utils/sentry');
 
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
@@ -9,6 +10,7 @@ const errorHandler = (err, req, res, next) => {
   const isServerError = statusCode >= 500;
 
   if (isServerError) {
+    Sentry.captureException(err);
     logger.error('Unhandled server error', {
       message: err.message,
       stack: err.stack,

@@ -7,6 +7,9 @@ const { closeQueue } = require('./services/queue.service');
 const { startPurgeCron } = require('./cron/purge.cron');
 const config = require('./config');
 const logger = require('./utils/logger');
+const { initSentry, Sentry } = require('./utils/sentry');
+
+initSentry();
 
 const start = async () => {
   const app = createApp();
@@ -31,6 +34,9 @@ const start = async () => {
     server.close(async () => {
       try {
         await Promise.allSettled([closePool(), closeRedis(), closeQueue()]);
+        if (config.sentry.dsn) {
+          await Sentry.flush(2000);
+        }
         logger.info('All connections closed. Exiting.');
         process.exit(0);
       } catch (err) {
@@ -51,11 +57,13 @@ const start = async () => {
 
   process.on('unhandledRejection', (reason) => {
     logger.error('Unhandled Promise Rejection', { reason: String(reason) });
+    Sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)));
   });
 
   process.on('uncaughtException', (err) => {
     logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
-    process.exit(1);
+    Sentry.captureException(err);
+    Sentry.flush(2000).then(() => process.exit(1));
   });
 
   return server;

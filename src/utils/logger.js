@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
@@ -14,6 +15,14 @@ const devFormat = printf(({ level, message, timestamp: ts, ...meta }) => {
 
 const buildTransports = () => {
   const transports = [];
+
+  if (config.isProd) {
+    try {
+      fs.mkdirSync(config.logging.dir, { recursive: true });
+    } catch (err) {
+      // If log directory creation fails, just continue and allow Winston to surface the error.
+    }
+  }
 
   if (config.isTest) {
     // Silent during tests unless LOG_LEVEL=debug

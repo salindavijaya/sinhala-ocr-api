@@ -7,9 +7,12 @@ const compression = require('compression');
 const morgan = require('morgan');
 const config = require('./config');
 const logger = require('./utils/logger');
+const { initSentry, Sentry } = require('./utils/sentry');
 const { errorHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { notFound } = require('./utils/apiResponse');
+
+initSentry();
 
 // Routes
 const authRoutes         = require('./routes/auth.routes');
@@ -19,6 +22,14 @@ const healthRoutes       = require('./routes/health.routes');
 
 const createApp = () => {
   const app = express();
+
+  // Initialize Sentry request instrumentation before any other middleware.
+  if (config.sentry.dsn) {
+    app.use(Sentry.Handlers.requestHandler());
+    if (config.sentry.tracesSampleRate > 0) {
+      app.use(Sentry.Handlers.tracingHandler());
+    }
+  }
 
   // ── Security headers ────────────────────────────────────────────────────────
   app.use(helmet());
@@ -74,6 +85,9 @@ const createApp = () => {
   });
 
   // ── Global error handler ─────────────────────────────────────────────────────
+  if (config.sentry.dsn) {
+    app.use(Sentry.Handlers.errorHandler());
+  }
   app.use(errorHandler);
 
   return app;
