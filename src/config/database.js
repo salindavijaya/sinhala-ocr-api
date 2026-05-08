@@ -3,11 +3,12 @@
 const { Pool } = require('pg');
 const config = require('./index');
 const logger = require('../utils/logger');
-
+const { Sentry } = require('../utils/sentry');
 let pool;
 
 const getPool = () => {
   if (!pool) {
+    try {
     pool = new Pool({
       host: config.db.host,
       port: config.db.port,
@@ -20,8 +21,11 @@ const getPool = () => {
       connectionTimeoutMillis: 5000,
       ssl: config.db.ssl ? { rejectUnauthorized: false } : false,
     });
+    }
+    catch (err){ Sentry.captureException(err);}
 
     pool.on('error', (err) => {
+      Sentry.captureException(err);
       logger.error('Unexpected PostgreSQL pool error', { error: err.message });
     });
 
