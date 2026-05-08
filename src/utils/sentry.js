@@ -2,27 +2,35 @@
 
 const path = require('path');
 const Sentry = require('@sentry/node');
-const Tracing = require('@sentry/tracing');
 const config = require('../config');
 const pkg = require(path.join(__dirname, '../../package.json'));
 
+/**
+ * Initializes Sentry for the application.
+ * Note: @sentry/tracing is no longer required in v8.x.
+ */
 const initSentry = () => {
   if (!config.sentry.dsn) {
     return Sentry;
   }
 
-  if (Sentry.getCurrentHub().getClient()) {
+  // In v8, check if a client is already initialized directly on Sentry
+  if (Sentry.getClient()) {
     return Sentry;
   }
 
   Sentry.init({
     dsn: config.sentry.dsn,
     environment: config.env,
+    // Uses the version from package.json or a custom release tag
     release: config.sentry.release || `${config.appName}@${pkg.version}`,
-    tracesSampleRate: config.sentry.tracesSampleRate,
+    tracesSampleRate: config.sentry.tracesSampleRate || 1.0,
     attachStacktrace: true,
     debug: config.sentry.debug,
-    integrations: [new Sentry.Integrations.Http({ tracing: true })],
+    // v8 uses functional integrations instead of class constructors
+    integrations: [
+      Sentry.httpIntegration({ tracing: true }),
+    ],
   });
 
   return Sentry;
