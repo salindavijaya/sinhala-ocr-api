@@ -7,6 +7,7 @@ const { healthCheck: redisHealth } = require('../config/redis');
 const { healthCheck: queueHealth } = require('../services/queue.service');
 const { success, serverError } = require('../utils/apiResponse');
 const config = require('../config');
+const { Sentry } = require('../utils/sentry');
 
 /**
  * GET /health — readiness probe (checks all dependencies)
@@ -18,12 +19,14 @@ router.get('/', async (req, res) => {
     checks.database = await dbHealth();
     checks.database.status = 'ok';
   } catch (err) {
+    Sentry.captureException(err);
     checks.database = { status: 'error', message: err.message };
   }
 
   try {
     checks.redis = await redisHealth();
   } catch (err) {
+    Sentry.captureException(err);
     checks.redis = { status: 'error', message: err.message };
   }
 
@@ -31,6 +34,7 @@ router.get('/', async (req, res) => {
     checks.queue = await queueHealth();
     checks.queue.status = 'ok';
   } catch (err) {
+    Sentry.captureException(err);
     checks.queue = { status: 'error', message: err.message };
   }
 
