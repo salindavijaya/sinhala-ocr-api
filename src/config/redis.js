@@ -20,8 +20,9 @@ const getRedisClient = () => {
       ...(config.redis.tls && { tls: {} }),
       lazyConnect: false,
     };
+      client = new Redis(config.redis.url, options);
     } catch (err) { Sentry.captureException(err); }
-    client = new Redis(config.redis.url, options);
+    
 
     client.on('connect', () => logger.info('Redis connected'));
     client.on('ready', () => logger.info('Redis ready'));
