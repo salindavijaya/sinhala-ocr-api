@@ -200,7 +200,7 @@ if gcloud run deploy "${SERVICE_NAME}" \
   --memory=512Mi \
   --cpu=1 \
   --timeout=3600s \
-  --startup-cpu-boost \
+  --cpu-boost \
   --session-affinity \
   --set-env-vars="NODE_ENV=production,GCP_PROJECT_ID=${GCP_PROJECT_ID},GCS_BUCKET_NAME=${GCS_BUCKET_NAME},GCS_OUTPUT_BUCKET_NAME=${GCS_OUTPUT_BUCKET_NAME}" \
   --set-secrets="JWT_SECRET=jwt-secret:latest,DB_PASSWORD=db-password:latest,REDIS_URL=redis-url:latest" \
@@ -223,14 +223,14 @@ if gcloud run deploy "${WORKER_SERVICE}" \
   --platform=managed \
   --no-allow-unauthenticated \
   --args="src/workers/transcription.worker.js" \
-  --port=3001 \
+  --port=3000 \
   --min-instances=1 \
   --max-instances=5 \
   --concurrency=1 \
   --memory=1Gi \
   --cpu=2 \
   --timeout=3600s \
-  --startup-cpu-boost \
+  --cpu-boost \
   --set-env-vars="NODE_ENV=production,GCP_PROJECT_ID=${GCP_PROJECT_ID},QUEUE_CONCURRENCY=3,LOG_LEVEL=info" \
   --set-secrets="JWT_SECRET=jwt-secret:latest,DB_PASSWORD=db-password:latest,REDIS_URL=redis-url:latest" \
   --service-account="${SERVICE_ACCOUNT}" \

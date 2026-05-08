@@ -20,6 +20,7 @@ const logger = require('../utils/logger');
 const { initSentry, Sentry } = require('../utils/sentry');
 
 initSentry();
+const http = require('http');
 
 const processJob = async (bullJob) => {
   const {
@@ -134,9 +135,23 @@ const startWorker = () => {
     concurrency: config.jobs.queueConcurrency,
     maxRetries: config.jobs.maxRetries,
   });
+  const port = process.env.PORT || 3000;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/') {
+      res.writeHead(200);
+      res.end('Worker is healthy and processing jobs');
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+
+  server.listen(port, '0.0.0.0', () => {
+    logger.info(`Cloud Run health check server listening on port ${port}`);
+  });
 };
 
-// Start worker if run directly (not imported as a module)
+// Start worker if run directly
 if (require.main === module) {
   process.on('unhandledRejection', (reason) => {
     logger.error('Worker unhandled Promise rejection', { reason: String(reason) });
