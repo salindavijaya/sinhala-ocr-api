@@ -24,12 +24,13 @@ const createApp = () => {
   const app = express();
 
   // Initialize Sentry request instrumentation before any other middleware.
-  if (config.sentry.dsn) {
+ /* if (config.sentry.dsn) {
     app.use(Sentry.Handlers.requestHandler());
     if (config.sentry.tracesSampleRate > 0) {
       app.use(Sentry.Handlers.tracingHandler());
     }
-  }
+    //Sentry.setupExpressErrorHandler(app);
+  }*/
 
 app.set('trust proxy', 1);
   // ── Security headers ────────────────────────────────────────────────────────
@@ -87,7 +88,8 @@ app.set('trust proxy', 1);
 
   // ── Global error handler ─────────────────────────────────────────────────────
   if (config.sentry.dsn) {
-    app.use(Sentry.Handlers.errorHandler());
+   // app.use(Sentry.Handlers.errorHandler());
+    Sentry.setupExpressErrorHandler(app);
   }
   app.use(errorHandler);
 
