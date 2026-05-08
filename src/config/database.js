@@ -18,7 +18,7 @@ const getPool = () => {
       min: config.db.poolMin,
       max: config.db.poolMax,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
       ssl: config.db.ssl ? { rejectUnauthorized: false } : false,
     });
     }
