@@ -14,7 +14,9 @@ const { Sentry } = require('../utils/sentry');
  */
 router.get('/', async (req, res) => {
   const checks = {};
-
+  const {HealthType} = req.body;
+  if (!HealthType) checks.healthType = {status: 'error' , message: 'HealthType is missing !! ' };
+  if (HealthType === 'db'){
   try {
     checks.database = await dbHealth();
     checks.database.status = 'ok';
@@ -22,14 +24,18 @@ router.get('/', async (req, res) => {
     Sentry.captureException(err);
     checks.database = { status: 'error', message: err.message };
   }
+  }
 
+  if (HealthType === 'redis'){
   try {
     checks.redis = await redisHealth();
   } catch (err) {
     Sentry.captureException(err);
     checks.redis = { status: 'error', message: err.message };
   }
+  }
 
+  if (HealthType === 'queue'){
   try {
     checks.queue = await queueHealth();
     checks.queue.status = 'ok';
@@ -37,7 +43,7 @@ router.get('/', async (req, res) => {
     Sentry.captureException(err);
     checks.queue = { status: 'error', message: err.message };
   }
-
+  }
   const allHealthy = Object.values(checks).every((c) => c.status === 'ok');
 
   const statusCode = allHealthy ? 200 : 503;
