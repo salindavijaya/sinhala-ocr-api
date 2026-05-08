@@ -70,7 +70,7 @@ const config = {
   },
 
   cors: {
-    origins: (process.env.CORS_ORIGINS || 'http://localhost:5173').split(','),
+    origins: ('https://akuru-frontend.vercel.app' || process.env.CORS_ORIGINS || 'http://localhost:5173').split(','),
   },
 
   logging: {
