@@ -80,10 +80,10 @@ const config = {
   },
 
   sentry: {
-    dsn: process.env.SENTRY_DSN || '',
+    dsn: "https://d74606e23dd7e3ab68d556f41f3096d8@o4511353159090176.ingest.de.sentry.io/4511353168003152",//process.env.SENTRY_DSN || '',
     release: process.env.SENTRY_RELEASE || `${process.env.APP_NAME || 'sinhala-ocr-api'}@${require('../../package.json').version}`,
     tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.0,
-    debug: process.env.SENTRY_DEBUG === 'true',
+    debug: "true",// process.env.SENTRY_DEBUG === 'true',
   },
 };
 
