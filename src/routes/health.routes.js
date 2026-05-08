@@ -14,7 +14,7 @@ const { Sentry } = require('../utils/sentry');
  */
 router.get('/', async (req, res) => {
   const checks = {};
-  const {HealthType} = req.body;
+  const {HealthType} = req.query;
   if (!HealthType) checks.healthType = {status: 'error' , message: 'HealthType is missing !! ' };
   if (HealthType === 'db'){
   try {
