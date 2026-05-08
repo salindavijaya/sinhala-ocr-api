@@ -5,12 +5,12 @@ const router = express.Router();
 const ctrl = require('../controllers/auth.controller');
 const { authenticate } = require('../middleware/auth');
 const { validate, registerSchema, loginSchema, createApiKeySchema } = require('../utils/validators');
-const { authLimiter } = require('../middleware/rateLimiter');
+//const { authLimiter } = require('../middleware/rateLimiter');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // Public routes
-router.post('/register', authLimiter, validate(registerSchema), asyncHandler(ctrl.register));
-router.post('/login',    authLimiter, validate(loginSchema),    asyncHandler(ctrl.login));
+router.post('/register', /*authLimiter,*/ validate(registerSchema), asyncHandler(ctrl.register));
+router.post('/login',   /* authLimiter,*/ validate(loginSchema),    asyncHandler(ctrl.login));
 
 // Protected routes
 router.get('/me',                     authenticate, asyncHandler(ctrl.getMe));
