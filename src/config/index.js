@@ -45,7 +45,7 @@ const config = {
     keyFile: process.env.GCP_KEY_FILE || undefined,
     storage: {
       inputBucket: process.env.GCS_BUCKET_NAME || 'sinhala-ocr-uploads',
-      outputBucket: process.env.GCS_OUTPUT_BUCKET_NAME || 'sinhala-ocr-outputs',
+      outputBucket: 'sicript_bucket_output' || process.env.GCS_OUTPUT_BUCKET_NAME || 'sinhala-ocr-outputs',
       signedUrlExpiry: parseInt(process.env.GCS_SIGNED_URL_EXPIRY, 10) || 259200, // 72hrs
     },
   },
