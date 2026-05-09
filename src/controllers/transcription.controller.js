@@ -6,7 +6,7 @@ const { uploadBuffer, buildInputPath } = require('../services/storage.service');
 const { enqueueTranscription } = require('../services/queue.service');
 const { success, error } = require('../utils/apiResponse');
 const logger = require('../utils/logger');
-
+const { Sentry } = require('../utils/sentry');
 /**
  * POST /transcribe
  *
@@ -76,6 +76,7 @@ const transcribe = async (req, res) => {
     }, 202); // 202 Accepted
 
   } catch (err) {
+    Sentry.captureException(err);
     logger.error('Failed to queue transcription', { userId, jobId, error: err.message });
     // Attempt cleanup of any partially uploaded file
     // (fire-and-forget, best effort)
