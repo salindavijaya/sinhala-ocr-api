@@ -25,22 +25,21 @@ const config = {
   },
 
   db: {
-    host: '/cloudsql/supple-defender-421716:asia-south1:sicript-db-v1' , // '34.14.165.235', // process.env.DB_HOST || 'localhost',
+    host: 'postgresql://neondb_owner:npg_4HYorb9lfyKj@ep-gentle-waterfall-a7kok202-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require', // '/cloudsql/supple-defender-421716:asia-south1:sicript-db-v1' , // '34.14.165.235', // process.env.DB_HOST || 'localhost',
     port: 5432, // parseInt(process.env.DB_PORT, 10) || 5432,
-    name: process.env.DB_NAME || 'sicript-db-v1',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'Sicript-db-v1',
-    ssl: process.env.DB_SSL === 'true',
+    name: 'neondb' || process.env.DB_NAME || 'sicript-db-v1',
+    user: 'neondb_owner' ||process.env.DB_USER || 'postgres',
+    password: 'npg_4HYorb9lfyKj' || process.env.DB_PASSWORD || 'Sicript-db-v1',
+    ssl: true || process.env.DB_SSL === 'true',
     poolMin: parseInt(process.env.DB_POOL_MIN, 10) || 2,
     poolMax: parseInt(process.env.DB_POOL_MAX, 10) || 10,
   },
 
   redis: {
-    url: 'redis://10.228.118.12:6379',//  process.env.REDIS_URL || 'redis://localhost:6379',
-    password: '',//process.env.REDIS_PASSWORD || undefined,
-    tls: false // process.env.REDIS_TLS === 'true',
+    url: 'rediss://default:gQAAAAAAAdO0AAIgcDJmN2I2ZjNkN2E3MTI0YjBkOWQ5YWQ0MzVjYjcyMGEzMA@united-peacock-119732.upstash.io:6379', // 'redis://10.228.118.12:6379',//  process.env.REDIS_URL || 'redis://localhost:6379',
+    password: 'gQAAAAAAAdO0AAIgcDJmN2I2ZjNkN2E3MTI0YjBkOWQ5YWQ0MzVjYjcyMGEzMA',//process.env.REDIS_PASSWORD || undefined,
+    tls: true // process.env.REDIS_TLS === 'true',
   },
-
   gcp: {
     projectId: process.env.GCP_PROJECT_ID || '',
     keyFile: process.env.GCP_KEY_FILE || undefined,
