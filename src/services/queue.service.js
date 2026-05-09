@@ -3,7 +3,7 @@
 const Bull = require('bull');
 const config = require('../config');
 const logger = require('../utils/logger');
-
+const { Sentry } = require('../utils/sentry');
 const QUEUE_NAME = 'sinhala-transcription';
 
 let transcriptionQueue;
@@ -28,6 +28,7 @@ const getQueue = () => {
     transcriptionQueue = new Bull(QUEUE_NAME, redisOpts);
 
     transcriptionQueue.on('error', (err) => {
+      Sentry.captureException(err);
       logger.error('Bull queue error', { error: err.message });
     });
 
@@ -44,6 +45,7 @@ const getQueue = () => {
     });
 
     transcriptionQueue.on('failed', (job, err) => {
+      Sentry.captureException(err);
       logger.error('Job failed', { jobId: job.id, dbJobId: job.data.jobId, error: err.message });
     });
   }
