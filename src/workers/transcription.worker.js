@@ -49,7 +49,7 @@ const processJob = async (bullJob) => {
 }); }
 
   // ── Step 3: OCR + Sinhala normalisation ──────────────────────────────────
- tey {
+ try {
   logger.info('Worker: running OCR', { jobId });
   const ocrResult = await transcribe(fileBuffer, mimeType, languageHint);
   await bullJob.progress(60); } catch (err) { Sentry.captureException(err, {
