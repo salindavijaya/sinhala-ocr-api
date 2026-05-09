@@ -25,7 +25,7 @@ const config = {
   },
 
   db: {
-    host: 'postgresql://neondb_owner:npg_4HYorb9lfyKj@ep-gentle-waterfall-a7kok202-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require', // '/cloudsql/supple-defender-421716:asia-south1:sicript-db-v1' , // '34.14.165.235', // process.env.DB_HOST || 'localhost',
+    host: 'ep-gentle-waterfall-a7kok202-pooler.ap-southeast-2.aws.neon.tech', // '/cloudsql/supple-defender-421716:asia-south1:sicript-db-v1' , // '34.14.165.235', // process.env.DB_HOST || 'localhost',
     port: 5432, // parseInt(process.env.DB_PORT, 10) || 5432,
     name: 'neondb' || process.env.DB_NAME || 'sicript-db-v1',
     user: 'neondb_owner' ||process.env.DB_USER || 'postgres',
