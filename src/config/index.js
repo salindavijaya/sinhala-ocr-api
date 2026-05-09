@@ -25,7 +25,7 @@ const config = {
   },
 
   db: {
-    host: '34.14.165.235', // process.env.DB_HOST || 'localhost',
+    host: '/cloudsql/supple-defender-421716:asia-south1:sicript-db-v1' , // '34.14.165.235', // process.env.DB_HOST || 'localhost',
     port: 5432, // parseInt(process.env.DB_PORT, 10) || 5432,
     name: process.env.DB_NAME || 'sicript-db-v1',
     user: process.env.DB_USER || 'postgres',
