@@ -53,7 +53,7 @@ const config = {
     tls: true // process.env.REDIS_TLS === 'true',
   },
   gcp: {
-    projectId: 'supple-defender-421716' ||   process.env.GCP_PROJECT_ID || '',
+    projectId: process.env.GCP_PROJECT_ID || '',
     keyFile: JSON.stringify(GCP_KEY) || process.env.GCP_SA_KEY || undefined,
     storage: {
       inputBucket: process.env.GCS_BUCKET_NAME || 'sinhala-ocr-uploads',
