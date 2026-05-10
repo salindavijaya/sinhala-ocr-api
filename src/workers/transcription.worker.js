@@ -60,8 +60,8 @@ Sentry.captureMessage("db marked", {
   await bullJob.progress(50); 
 Sentry.captureMessage("ocr completed", {
   level: "debug",
-  tags: { feature_name: "transcriber" },
-  extra: { userId: 123, rolloutPercentage: 0.5 }
+  tags: { feature_name: "transcriber_result"},
+  extra: { userId: ocrResult,extracted: ocrResult.extractedText, rolloutPercentage: 0.5 }
 });
 
   logger.info('Worker: OCR result', {
