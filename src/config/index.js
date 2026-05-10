@@ -57,7 +57,7 @@ const config = {
 
   jobs: {
     ttlHours: parseInt(process.env.JOB_TTL_HOURS, 10) || 72,
-    queueConcurrency: parseInt(process.env.QUEUE_CONCURRENCY, 10) || 3,
+    queueConcurrency: 1 , // parseInt(process.env.QUEUE_CONCURRENCY, 10) || 3,
     maxRetries: parseInt(process.env.QUEUE_MAX_RETRIES, 10) || 2,
   },
 
