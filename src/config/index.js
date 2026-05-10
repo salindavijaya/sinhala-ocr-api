@@ -9,7 +9,19 @@ const required = (key) => {
   }
   return val;
 };
-
+const GCP_KEY = '{
+  "type": "service_account",
+  "project_id": "supple-defender-421716",
+  "private_key_id": "fe4c87d21cdf90a51e4468e1ab13f0d62df7d5b6",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDhT+zi79T106jU\ntsvzOEzMxEfrAD+Md2udWvLK1lmVEEG3Auy1Ihwy10gXtbAy07dPzprhQY818ZYW\nwvwJXa7lPHdMhR5t0xC7+aCv0jaEfvF29XABNYe75XZmcMCuKe6py8+/nQXDSfHm\nvcFfkXHXtsMxrmoJptnvsR8cWu1ASmoBRNcUmiH3+BnPidF9Gjicg6JQkEKaqFBM\npSnSnJ7Wzby9YJP/tcovjXjWViEkS0aWgY/gD0NybylccTBktNtfnT9JCqnJRPKs\nhM88nmP7uQh8ZcgDHDqTsMBLGNDTJWKgueqbfwNXugPkUtHu4tXczZoiehIWLXpO\nhS53sOOzAgMBAAECggEAaObegvZo75+BXrBRGseeskO8vERcUhkTyKqcmiXchZOR\nFRVOgjMEcANdtHRKOg/qrESkRbZRaCs31xcnY3DzyhUx8jWUaku34d0inFnCOkQk\nRl+Vq2px7OC0FJPwkeZCEVosOqlwEnGuJ+E3VDiSiX21Ob9b7Wx60adktb378k8T\nZolEbb3IoLKvhHTkzCu3r+bMb3MZ8a+66tVYmihl3Af6VMYrrYeQQfTWamHsy06p\nFyMqMjx1sLMRfoL+d5ZwJNDHURN1+zuDy4ADaF7f8Nx590B64eIhshCwOqmQFkK+\n1S3JDkoaFZ2fXwWHnj1GZta3VHySH4S72WjaPXeQQQKBgQD5vJtzUmJI2hlsmmOP\nxmM2OaYyC1CpBiP5JzC/+XNYaQvM63yq9Sa+k4regNuZPfei0H1pe2pwxU5Vlu+H\nu5/J5GMPz5xCddpRdyUDd8/cbiQLtnt8XzRPSQexcRAr6B8fJTNTww7Z9AJN2a1u\nMQmuaLfhoT0IE25ArcBhDAYVIQKBgQDm9oEkzzZX3eLWDoK6SLG5kuBJzQaJgcbX\ngayHlgz516oKFzQBLEras1VMdRJvsWhzoDFLBRpZTHqfUlOIEcFMN3isDF1nv3cn\n0uMdbJOYsh3JHnVH51oZr5qiJCj0qCZ2j4fHVHKKkDYnptlzppWEnROlomM7qUUu\n2q2ZV4zKUwKBgQCCCpIvtMB1CwyeHq6lWTqkK9S8zmOMACSPQrcB4BUN/nUkmaLr\nKoioSA/R2OuAmmHup/4GBTvhyPwHWXcVCMAl0wU6YHMPsGqkbRQbADJ+p+OhLb6T\nfsewWWjmHue61T4Pa8GUZke/em4Qt761WFegN+s4VEuBfwy0JUW9wxMPwQKBgD6z\nrVvQ5W/1TR/P0K3CDn3S4hEnGB88nD7ldXFZyywI4KDcq8GlxKybAw0+u0KXZ0P8\nuWUkfYLAwImAUC0gpNmMNbZ/pNwFntOw7PeQAoHx2SRAoJZkuJFAmzpplrTU8Zw+\nWx5CTtZPUGRzZ5V+JBlci3jsHQSVb7LIq1h17EMBAoGAQ3Nw9PWjuPbREgCC7IGB\noxpC0fuQOOhfWgRdtV+0zbPrcpPmeFufRuQ61dShi4yFudvgmI58PQ/Bep63p4Re\nlp0jFQDuY3GtTA8NLL+OJi1MBYFPdDLkQ28lQg8SFZkrHWQnSGEEJ3W2LIZO7ukd\ntsSmTy481EjckEkly+U7V3E=\n-----END PRIVATE KEY-----\n",
+  "client_email": "sicript-service@supple-defender-421716.iam.gserviceaccount.com",
+  "client_id": "111922505298573552918",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sicript-service%40supple-defender-421716.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}';
 const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 3000,
@@ -41,8 +53,8 @@ const config = {
     tls: true // process.env.REDIS_TLS === 'true',
   },
   gcp: {
-    projectId: process.env.GCP_PROJECT_ID || '',
-    keyFile: process.env.GCP_SA_KEY || undefined,
+    projectId: 'supple-defender-421716' ||   process.env.GCP_PROJECT_ID || '',
+    keyFile: GCP_KEY || process.env.GCP_SA_KEY || undefined,
     storage: {
       inputBucket: process.env.GCS_BUCKET_NAME || 'sinhala-ocr-uploads',
       outputBucket: 'sicript_bucket_output' || process.env.GCS_OUTPUT_BUCKET_NAME || 'sinhala-ocr-outputs',
