@@ -68,7 +68,7 @@ describe('ocrService', () => {
 
       expect(mockVisionClient.documentTextDetection).toHaveBeenCalledWith(
         expect.objectContaining({
-          image: { gcsImageUri: uri },
+          image: { source: { gcsImageUri: uri } },
           imageContext: expect.any(Object),
         })
       );
@@ -129,7 +129,7 @@ describe('ocrService', () => {
 
       expect(mockVisionClient.documentTextDetection).toHaveBeenCalledWith(
         expect.objectContaining({
-          image: { gcsImageUri: uri },
+          image: { source: { gcsImageUri: uri } },
         })
       );
     });
