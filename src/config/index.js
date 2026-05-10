@@ -54,7 +54,7 @@ const config = {
   },
   gcp: {
     projectId: process.env.GCP_PROJECT_ID || '',
-    keyFile: JSON.stringify(GCP_KEY) || process.env.GCP_SA_KEY || undefined,
+    keyFile: process.env.GCP_SA_KEY || JSON.STRINGIFY(GCP_KEY),
     storage: {
       inputBucket: process.env.GCS_BUCKET_NAME || 'sinhala-ocr-uploads',
       outputBucket: 'sicript_bucket_output' || process.env.GCS_OUTPUT_BUCKET_NAME || 'sinhala-ocr-outputs',
