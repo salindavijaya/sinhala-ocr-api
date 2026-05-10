@@ -179,8 +179,8 @@ describe('ocrService', () => {
       expect(mockVisionClient.documentTextDetection).toHaveBeenCalled();
       // Verify gcsImageUri was used instead of content
       const call = mockVisionClient.documentTextDetection.mock.calls[0][0];
-      expect(call.image).toHaveProperty('gcsImageUri');
-      expect(call.image).not.toHaveProperty('content');
+      expect(call.image.source).toHaveProperty('gcsImageUri');
+    expect(call.image).not.toHaveProperty('content');
     });
 
     it('routes PDF MIME type correctly', async () => {
@@ -188,7 +188,7 @@ describe('ocrService', () => {
 
       expect(mockVisionClient.documentTextDetection).toHaveBeenCalled();
       const call = mockVisionClient.documentTextDetection.mock.calls[0][0];
-      expect(call.image).toHaveProperty('gcsImageUri');
+      expect(call.image.source).toHaveProperty('gcsImageUri');
     });
 
     it('constructs correct GCS URI from path and bucketType', async () => {
