@@ -95,7 +95,7 @@ const meta = { originalFilename, pageCount: ocrResult.pageCount, jobId };
     await uploadBuffer(docxBuffer, gcsDocxPath, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'output');
     await bullJob.progress(75);
   }
-
+await bullJob.progress(80);
   if (shouldGenPdf) {
     logger.info('Worker: generating PDF', { jobId });
     const pdfBuffer = await generatePdf(ocrResult.extractedText, meta);
