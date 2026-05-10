@@ -35,27 +35,42 @@ const processJob = async (bullJob) => {
 
   logger.info('Worker: starting transcription', { jobId, mimeType, outputFormat });
   await bullJob.progress(5);
+Sentry.captureMessage("worker started", {
+  level: "debug",
+  tags: { feature_name: "worker" },
+  extra: { userId: 123, rolloutPercentage: 0.5 }
+});
 
   // ── Step 1: mark DB job as processing ────────────────────────────────────
   await Job.markProcessing(jobId);
   await bullJob.progress(10);
+Sentry.captureMessage("db marked", {
+  level: "debug",
+  tags: { feature_name: "job status set" },
+  extra: { userId: 123, rolloutPercentage: 1.0 }
+});
 
   // ── Step 2: download input file from GCS ─────────────────────────────────
- try {
+ 
   logger.info('Worker: downloading input from GCS', { gcsInputPath });
   const fileBuffer = await downloadBuffer(gcsInputPath, 'input');
-  await bullJob.progress(25); } catch (err) { Sentry.captureException(err,{
-  tags: { section: "documenting", priority: "high" }
-}); }
+  await bullJob.progress(25); 
+Sentry.captureMessage("file buffer downloaded", {
+  level: "debug",
+  tags: { feature_name: "file buffer" },
+  extra: { userId: 123, rolloutPercentage: 2.5 }
+});
 
   // ── Step 3: OCR + Sinhala normalisation ──────────────────────────────────
- try {
+ 
   logger.info('Worker: running OCR', { jobId });
   const ocrResult = await transcribe(fileBuffer, mimeType, languageHint);
-  await bullJob.progress(60); } catch (err) { Sentry.captureException(err, {
-  tags: { section: "transcribe", priority: "high" }
+  await bullJob.progress(60); 
+Sentry.captureMessage("ocr completed", {
+  level: "debug",
+  tags: { feature_name: "transcriber" },
+  extra: { userId: 123, rolloutPercentage: 0.5 }
 });
-}
 
   logger.info('Worker: OCR result', {
     jobId,
@@ -65,7 +80,7 @@ const processJob = async (bullJob) => {
   });
 
   // ── Step 4: generate output documents ────────────────────────────────────
- try {
+ 
 const meta = { originalFilename, pageCount: ocrResult.pageCount, jobId };
   let gcsDocxPath = null;
   let gcsPdfPath = null;
@@ -88,10 +103,13 @@ const meta = { originalFilename, pageCount: ocrResult.pageCount, jobId };
     await uploadBuffer(pdfBuffer, gcsPdfPath, 'application/pdf', 'output');
     await bullJob.progress(90);
   }
-} catch (err) { Sentry.captureException(err, {
-  tags: { section: "documenting", priority: "high" }
+
+    Sentry.captureMessage("document completed", {
+  level: "debug",
+  tags: { feature_name: "documenting" },
+  extra: { userId: 123, rolloutPercentage: 6.5 }
 });
-              }
+          
 
   // ── Step 5: mark DB job as completed ─────────────────────────────────────
   await Job.markCompleted(jobId, {
