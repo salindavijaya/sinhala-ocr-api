@@ -191,7 +191,7 @@ const ocrImageUri = async (gcsImageUri, languageHint = 'si') => {
   logger.info('Starting OCR on image URI', { gcsImageUri, languageHint });
 
   const [result] = await client.documentTextDetection({
-    image: { gcsImageUri },
+    image: { source: { gcsImageUri } },
     imageContext: {
       languageHints: [languageHint, 'si-LK'],
     },
@@ -219,7 +219,7 @@ const ocrPdfUri = async (gcsImageUri, languageHint = 'si') => {
   logger.info('Starting OCR on PDF URI', { gcsImageUri });
 
   const [result] = await client.documentTextDetection({
-    image: { gcsImageUri },
+    image: { source: { gcsImageUri } },
     imageContext: {
       languageHints: [languageHint, 'si-LK'],
     },
