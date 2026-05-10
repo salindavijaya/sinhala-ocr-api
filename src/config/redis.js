@@ -10,7 +10,7 @@ const getRedisClient = () => {
   if (!client) {
     try { 
     const options = {
-      //maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 3,
       enableReadyCheck: true,
       retryStrategy(times) {
         if (times > 10) return null; // stop retrying
