@@ -26,6 +26,7 @@ const {
   deleteFile,
   buildInputPath,
   buildOutputPath,
+  buildGcsUri,
 } = require('../../src/services/storage.service');
 
 describe('storageService', () => {
@@ -128,6 +129,36 @@ describe('storageService', () => {
     it('throws for non-404 errors', async () => {
       mockFile.delete.mockRejectedValueOnce({ code: 500, message: 'Server error' });
       await expect(deleteFile('some/file.docx', 'output')).rejects.toMatchObject({ code: 500 });
+    });
+  });
+
+  // ─── buildGcsUri() ────────────────────────────────────────────
+  describe('buildGcsUri()', () => {
+    it('constructs correct input bucket URI', () => {
+      const uri = buildGcsUri('uploads/user-1/job-1/file.jpg', 'input');
+      expect(uri).toMatch(/^gs:\/\/.+\/uploads\/user-1\/job-1\/file\.jpg$/);
+    });
+
+    it('constructs correct output bucket URI', () => {
+      const uri = buildGcsUri('outputs/user-1/job-1/transcription.docx', 'output');
+      expect(uri).toMatch(/^gs:\/\/.+\/outputs\/user-1\/job-1\/transcription\.docx$/);
+    });
+
+    it('defaults to input bucket when bucketType omitted', () => {
+      const uri = buildGcsUri('some/path.jpg');
+      expect(uri).toMatch(/^gs:\/\/.+\/some\/path\.jpg$/);
+    });
+
+    it('preserves special characters in path', () => {
+      const uri = buildGcsUri('uploads/user-abc_123/job-def.456/file-2024-01-01.jpg', 'input');
+      expect(uri).toContain('user-abc_123');
+      expect(uri).toContain('job-def.456');
+      expect(uri).toContain('file-2024-01-01.jpg');
+    });
+
+    it('returns proper gs:// scheme', () => {
+      const uri = buildGcsUri('test/path.jpg');
+      expect(uri.startsWith('gs://')).toBe(true);
     });
   });
 });

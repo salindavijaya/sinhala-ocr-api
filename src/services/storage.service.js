@@ -89,6 +89,19 @@ const buildOutputPath = (userId, jobId, ext) => {
   return `outputs/${userId}/${jobId}/transcription.${ext}`;
 };
 
+/**
+ * Build a full GCS URI from a path string and bucket type.
+ * @param {string} gcsPath - GCS object path (e.g., "uploads/userId/jobId/file.jpg")
+ * @param {'input'|'output'} bucketType - Which bucket to use
+ * @returns {string} - Full GCS URI (e.g., "gs://bucket-name/uploads/userId/jobId/file.jpg")
+ */
+const buildGcsUri = (gcsPath, bucketType = 'input') => {
+  const bucketName = bucketType === 'output'
+    ? config.gcp.storage.outputBucket
+    : config.gcp.storage.inputBucket;
+  return `gs://${bucketName}/${gcsPath}`;
+};
+
 module.exports = {
   uploadBuffer,
   downloadBuffer,
@@ -96,4 +109,5 @@ module.exports = {
   deleteFile,
   buildInputPath,
   buildOutputPath,
+  buildGcsUri,
 };

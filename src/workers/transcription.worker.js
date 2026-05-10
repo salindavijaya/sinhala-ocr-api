@@ -11,9 +11,9 @@
 require('dotenv').config();
 
 const { getQueue } = require('../services/queue.service');
-const { transcribe } = require('../services/ocr.service');
+const { transcribeUri } = require('../services/ocr.service');
 const { generateDocx, generatePdf } = require('../services/document.service');
-const { downloadBuffer, uploadBuffer, buildOutputPath } = require('../services/storage.service');
+const { uploadBuffer, buildOutputPath } = require('../services/storage.service');
 const Job = require('../models/Job');
 const config = require('../config');
 const logger = require('../utils/logger');
@@ -50,22 +50,14 @@ Sentry.captureMessage("db marked", {
   extra: { userId: 123, rolloutPercentage: 1.0 }
 });
 
-  // ── Step 2: download input file from GCS ─────────────────────────────────
- 
-  logger.info('Worker: downloading input from GCS', { gcsInputPath });
-  const fileBuffer = await downloadBuffer(gcsInputPath, 'input');
-  await bullJob.progress(25); 
-Sentry.captureMessage("file buffer downloaded", {
-  level: "debug",
-  tags: { feature_name: "file buffer" },
-  extra: { userId: 123, rolloutPercentage: 2.5 }
-});
+  // ── Step 2: mark processing and await OCR ──────────────────────────────────
+  await bullJob.progress(20);
 
   // ── Step 3: OCR + Sinhala normalisation ──────────────────────────────────
- 
+
   logger.info('Worker: running OCR', { jobId });
-  const ocrResult = await transcribe(fileBuffer, mimeType, languageHint);
-  await bullJob.progress(60); 
+  const ocrResult = await transcribeUri(gcsInputPath, mimeType, languageHint, 'input');
+  await bullJob.progress(50); 
 Sentry.captureMessage("ocr completed", {
   level: "debug",
   tags: { feature_name: "transcriber" },
@@ -80,7 +72,7 @@ Sentry.captureMessage("ocr completed", {
   });
 
   // ── Step 4: generate output documents ────────────────────────────────────
- 
+
 const meta = { originalFilename, pageCount: ocrResult.pageCount, jobId };
   let gcsDocxPath = null;
   let gcsPdfPath = null;
@@ -93,9 +85,9 @@ const meta = { originalFilename, pageCount: ocrResult.pageCount, jobId };
     const docxBuffer = await generateDocx(ocrResult.extractedText, meta);
     gcsDocxPath = buildOutputPath(userId, jobId, 'docx');
     await uploadBuffer(docxBuffer, gcsDocxPath, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'output');
-    await bullJob.progress(75);
+    await bullJob.progress(70);
   }
-await bullJob.progress(80);
+await bullJob.progress(75);
   if (shouldGenPdf) {
     logger.info('Worker: generating PDF', { jobId });
     const pdfBuffer = await generatePdf(ocrResult.extractedText, meta);
