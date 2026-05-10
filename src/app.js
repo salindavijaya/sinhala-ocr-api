@@ -9,7 +9,7 @@ const config = require('./config');
 const logger = require('./utils/logger');
 const { initSentry, Sentry } = require('./utils/sentry');
 const { errorHandler } = require('./middleware/errorHandler');
-//const { generalLimiter } = require('./middleware/rateLimiter');
+const { generalLimiter } = require('./middleware/rateLimiter');
 const { notFound } = require('./utils/apiResponse');
 
 initSentry();
@@ -71,7 +71,7 @@ app.set('trust proxy', 1);
   }
 
   // ── General rate limiter ─────────────────────────────────────────────────────
- // app.use(generalLimiter);
+  app.use(generalLimiter);
 
   // ── Routes ───────────────────────────────────────────────────────────────────
   const API_PREFIX = '/api/v1';
