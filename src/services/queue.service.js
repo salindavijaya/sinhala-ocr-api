@@ -9,6 +9,12 @@ const QUEUE_NAME = 'sinhala-transcription';
 let transcriptionQueue;
 
 const getQueue = () => {
+  const bullSettings = {
+  lockDuration: 60000,    // 60s instead of default 30s
+  lockRenewTime: 20000,   // Renew every 20s
+  stalledInterval: 60000, // Check for stalls every 60s
+  maxStalledCount: 2      // Allow 2 stalls before failing
+};
   if (!transcriptionQueue) {
     const redisOpts = (() => {
       // Bull accepts either a redis URL string or connection options
@@ -22,7 +28,7 @@ const getQueue = () => {
           },
         };
       }
-      return { redis: config.redis.url };
+      return { redis: config.redis.url, settings: bullSettings };
     })();
 
     transcriptionQueue = new Bull(QUEUE_NAME, redisOpts);
