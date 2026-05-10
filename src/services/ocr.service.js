@@ -196,7 +196,10 @@ const ocrImageUri = async (gcsImageUri, languageHint = 'si') => {
       languageHints: [languageHint, 'si-LK'],
     },
   });
-
+logger.info('OCR raw response data (URI)', {
+    rawResult: result
+    
+  });
   const processedResult = _processVisionResult(result.fullTextAnnotation);
 
   logger.info('OCR completed (URI)', {
