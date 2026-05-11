@@ -1,8 +1,8 @@
 'use strict';
 
 const {
-  Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
-  Header, Footer, PageNumber, NumberFormat,
+  Document, Packer, Paragraph, TextRun, AlignmentType,
+  Header, Footer, PageNumber,
 } = require('docx');
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const logger = require('../utils/logger');
@@ -10,6 +10,28 @@ const logger = require('../utils/logger');
 const FONT_SIZE_PT = 14; // 14pt body text for Sinhala legibility
 const LINE_SPACING = 360; // 360 twips = 1.5× line spacing
 const PAGE_MARGIN = 720; // 720 twips = 0.5 inch margin
+
+const normalizeDocumentText = (text = '') => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+const createDocxParagraph = (line) => {
+  if (line.trim() === '--- Page Break ---') {
+    return new Paragraph({
+      pageBreakBefore: true,
+      children: [new TextRun({ text: '', size: 1 })],
+    });
+  }
+
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: line || ' ',
+        size: FONT_SIZE_PT * 2, // docx uses half-points
+      }),
+    ],
+    spacing: { line: LINE_SPACING },
+    alignment: AlignmentType.LEFT,
+  });
+};
 
 /**
  * Generate a DOCX buffer from normalised Sinhala text.
@@ -19,27 +41,12 @@ const PAGE_MARGIN = 720; // 720 twips = 0.5 inch margin
  * @returns {Promise<Buffer>}
  */
 const generateDocx = async (text, meta = {}) => {
-  logger.info('Generating DOCX', { jobId: meta.jobId, charCount: text.length });
+  const normalizedText = normalizeDocumentText(text);
+  logger.info('Generating DOCX', { jobId: meta.jobId, charCount: normalizedText.length });
 
-  const paragraphs = text
+  const paragraphs = normalizedText
     .split('\n')
-    .map((line) => {
-      const isPageBreak = line.trim() === '--- Page Break ---';
-      if (isPageBreak) {
-        return new Paragraph({ pageBreakBefore: true });
-      }
-      return new Paragraph({
-        children: [
-          new TextRun({
-            text: line || ' ',
-            size: FONT_SIZE_PT * 2, // docx uses half-points
-            font: 'Noto Sans Sinhala', // best open-source Sinhala font; falls back gracefully
-          }),
-        ],
-        spacing: { line: LINE_SPACING },
-        alignment: AlignmentType.LEFT,
-      });
-    });
+    .map(createDocxParagraph);
 
   const headerParagraph = new Paragraph({
     children: [
@@ -119,18 +126,16 @@ const generatePdf = async (text, meta = {}) => {
   const margin = 50;
   const lineHeight = fontSize * 1.6;
 
-  const lines = text.split('\n');
+  const lines = normalizeDocumentText(text).split('\n');
   let currentPage = null;
   let y = 0;
   const pageWidth = 595;   // A4
   const pageHeight = 842;  // A4
-  const usableHeight = pageHeight - margin * 2;
 
   const addPage = () => {
     currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
     y = pageHeight - margin - fontSize;
 
-    // Header
     currentPage.drawText(`Source: ${meta.originalFilename || 'document'} | Sinhala OCR API`, {
       x: margin,
       y: pageHeight - margin + 10,
@@ -152,10 +157,9 @@ const generatePdf = async (text, meta = {}) => {
       addPage();
     }
 
-    // pdf-lib cannot render Sinhala glyphs with standard fonts.
-    // We draw the text anyway — viewers with Sinhala font support will display it.
+    const renderedLine = line || ' ';
     try {
-      currentPage.drawText(line || ' ', {
+      currentPage.drawText(renderedLine, {
         x: margin,
         y,
         size: fontSize,
@@ -163,8 +167,19 @@ const generatePdf = async (text, meta = {}) => {
         color: rgb(0, 0, 0),
         maxWidth: pageWidth - margin * 2,
       });
-    } catch {
-      // Skip lines with characters outside the font's encoding
+    } catch (err) {
+      logger.warn('Failed to draw PDF line, preserving document structure', {
+        jobId: meta.jobId,
+        line: renderedLine.slice(0, 50),
+        error: err.message,
+      });
+      currentPage.drawText(' ', {
+        x: margin,
+        y,
+        size: fontSize,
+        font,
+        color: rgb(0, 0, 0),
+      });
     }
 
     y -= lineHeight;

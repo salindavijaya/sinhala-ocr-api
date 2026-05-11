@@ -68,7 +68,6 @@
       "!src/server.js",
       "!src/workers/transcription.worker.js",
       "!src/services/ocr.service.js",
-      "!src/services/document.service.js",
       "!src/services/queue.service.js",
       "!src/config/database.js",
       "!src/config/redis.js",
